@@ -5,6 +5,10 @@
 This tree imports lehuannhatrang/leehun-cri-o at
 `843bd56d977a86faffb248d9872bd14bff48eb4c` (CRI-O 1.37 development).
 It adds the admission-bound annotation restore adapter and CDI-aware import.
+Restore also preserves the current CRI request's UserSpecifiedImage for the
+existing signature-policy check, while retaining the checkpoint rootfs identity.
+It does not disable policy checks or fall back to archive metadata as a policy
+name. A missing request identity still fails wherever signature policy requires it.
 Upstream copyright/license notices are retained. Upstream workflows are archived
 in `.github/upstream-workflows`, not enabled for this experimental repository.
 
@@ -33,7 +37,8 @@ See upstream install.md for native build dependencies.
   git rev-parse HEAD
   go test -mod=vendor -v \
     server/container_restore_annotation.go server/container_restore_annotation_test.go \
-    server/container_restore_cdi.go server/container_restore_cdi_test.go
+    server/container_restore_cdi.go server/container_restore_cdi_test.go \
+    server/container_restore_image.go server/container_restore_image_test.go
   make -j2 BUILDTAGS="containers_image_openpgp containers_image_ostree_stub seccomp selinux" binaries
   ./bin/crio --version
   sha256sum bin/crio

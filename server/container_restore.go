@@ -229,9 +229,7 @@ func (s *Server) CRImportCheckpoint(
 			Name:    createConfig.GetMetadata().GetName(),
 			Attempt: createConfig.GetMetadata().GetAttempt(),
 		},
-		Image: &types.ImageSpec{
-			Image: rootFSImage,
-		},
+		Image: restoreRootFSImage(rootFSImage, createConfig.GetImage()),
 		Linux: &types.LinuxContainerConfig{
 			Resources:       &types.LinuxContainerResources{},
 			SecurityContext: &types.LinuxContainerSecurityContext{},
