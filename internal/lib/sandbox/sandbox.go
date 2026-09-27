@@ -413,11 +413,12 @@ func (s *Sandbox) SetContainerEnvFile(ctx context.Context) error {
 	}
 
 	infra := s.InfraContainer()
-	filePath := filepath.Join(infra.Dir(), ".containerenv")
-
-	f, err := os.Create(filePath)
-	if err == nil {
-		f.Close()
+	if infra == nil {
+		return errors.New("containerenv requires an infra container")
+	}
+	filePath, err := ensureContainerEnvFile(infra.Dir())
+	if err != nil {
+		return err
 	}
 
 	s.containerEnvPath = filePath

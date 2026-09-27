@@ -87,6 +87,29 @@ automatic provisioning.
 
 ## Check the retry
 
+### Sandbox containerenv after daemon restart
+
+LoadSandbox now restores the current infra container's .containerenv path before
+new workload containers are created. Previously the in-memory path stayed empty
+after daemon restart, so /run/.containerenv was absent from the generated OCI
+mount list. CRIU archives using that external mount could then fail with
+`No mapping for ... mountpoint`. Existing regular marker files are preserved;
+creation errors and non-regular marker paths are rejected.
+
+Run the focused helper tests before building:
+
+```bash
+go test -mod=vendor -v internal/lib/sandbox/containerenv.go internal/lib/sandbox/containerenv_test.go
+# Full package tests require a supported OS and native build dependencies.
+go test -mod=vendor -tags 'containers_image_openpgp containers_image_ostree_stub' ./internal/lib/sandbox
+```
+
+Rebuild bin/crio and use the isolated-Worker binary replacement procedure above.
+Preserve the Pod and archive so the test exercises reloading an existing sandbox.
+Verify /run/.containerenv in the new OCI spec points at the current sandbox, not
+the source archive's sandbox. Confirm a fresh attempt no longer fails on that
+external mount; this alone does not prove full GPU restore success.
+
 For archives requiring TCP-close with the static crun binary, follow the
 [TCP-close restore procedure](tcp-close-restore.md).
 

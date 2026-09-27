@@ -414,6 +414,11 @@ func (c *ContainerServer) LoadSandbox(ctx context.Context, id string) (sb *sandb
 		return sb, err
 	}
 
+	// Rebuild the sandbox-owned mount source after a daemon restart.
+	if err := sb.SetContainerEnvFile(ctx); err != nil {
+		return sb, fmt.Errorf("restore sandbox containerenv: %w", err)
+	}
+
 	// We should restore the infraContainer to the container state store
 	c.AddInfraContainer(ctx, scontainer)
 

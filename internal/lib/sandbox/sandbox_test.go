@@ -2,6 +2,7 @@ package sandbox_test
 
 import (
 	"context"
+	"os"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -231,6 +232,9 @@ var _ = t.Describe("Sandbox", func() {
 		var testContainer *oci.Container
 
 		BeforeEach(func() {
+			infraDir, err := os.MkdirTemp("", "sandbox-containerenv-")
+			Expect(err).NotTo(HaveOccurred())
+			DeferCleanup(func() { Expect(os.RemoveAll(infraDir)).To(Succeed()) })
 			imageName, err := references.ParseRegistryImageReferenceFromOutOfProcessData("example.com/some-image:latest")
 			Expect(err).ToNot(HaveOccurred())
 			imageID, err := storage.ParseStorageImageIDFromOutOfProcessData("2a03a6059f21e150ae84b0973863609494aad70f0a80eaeb64bddd8d92465812")
@@ -240,7 +244,7 @@ var _ = t.Describe("Sandbox", func() {
 				map[string]string{}, map[string]string{}, "image",
 				&imageName, &imageID, "", &types.ContainerMetadata{},
 				"testsandboxid", false, false, false, "",
-				"/root/for/container", time.Now(), "SIGKILL")
+				infraDir, time.Now(), "SIGKILL")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(testContainer).NotTo(BeNil())
 		})
@@ -323,6 +327,26 @@ var _ = t.Describe("Sandbox", func() {
 
 			// Then
 			Expect(testSandbox.ContainerEnvPath()).To(ContainSubstring(".containerenv"))
+			Expect(testSandbox.ContainerEnvPath()).To(BeAnExistingFile())
+		})
+
+		It("should restore the containerenv path into a reloaded sandbox", func() {
+			Expect(testSandbox.SetInfraContainer(testContainer)).To(Succeed())
+			Expect(testSandbox.SetContainerEnvFile(context.TODO())).To(Succeed())
+			path := testSandbox.ContainerEnvPath()
+			Expect(os.WriteFile(path, []byte("preserve"), 0o600)).To(Succeed())
+			reloaded := &sandbox.Sandbox{}
+			Expect(reloaded.SetInfraContainer(testContainer)).To(Succeed())
+			Expect(reloaded.SetContainerEnvFile(context.TODO())).To(Succeed())
+			Expect(reloaded.ContainerEnvPath()).To(Equal(path))
+			data, err := os.ReadFile(path)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(data)).To(Equal("preserve"))
+		})
+
+		It("should reject containerenv initialization without an infra container", func() {
+			Expect(testSandbox.SetContainerEnvFile(context.TODO())).NotTo(Succeed())
+			Expect(testSandbox.ContainerEnvPath()).To(BeEmpty())
 		})
 	})
 	t.Describe("NeedsInfra", func() {
