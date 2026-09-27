@@ -87,6 +87,9 @@ automatic provisioning.
 
 ## Check the retry
 
+For archives requiring TCP-close with the static crun binary, follow the
+[TCP-close restore procedure](tcp-close-restore.md).
+
 Kubelet may retry the existing failed container automatically. Inspect fresh
 events for the current Pod UID; do not delete the Pod just to replace CRI-O.
 

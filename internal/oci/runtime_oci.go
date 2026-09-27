@@ -193,6 +193,14 @@ func (r *runtimeOCI) CreateContainer(ctx context.Context, c *Container, cgroupPa
 		log.Debugf(ctx, "Restore is true %v", restore)
 
 		args = append(args, "--restore", c.CheckpointPath())
+		tcpArgs, err := checkpointTCPRestoreArgs(c.CheckpointPath())
+		if err != nil {
+			return fmt.Errorf("reading checkpoint TCP restore requirements: %w", err)
+		}
+		args = append(args, tcpArgs...)
+		if len(tcpArgs) > 0 {
+			log.Infof(ctx, "Checkpoint inventory requires --tcp-close for container %s", c.ID())
+		}
 		if c.Spec().Process.SelinuxLabel != "" {
 			args = append(
 				args,
