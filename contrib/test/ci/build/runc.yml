@@ -1,0 +1,21 @@
+---
+- name: set runc checksum
+  set_fact:
+    runc_checksums:
+      amd64: "sha256:0363e69bebd3a027d1239364ab9b4f4873f6bc4e7a7878e94b4ea59f08551297"
+      arm64: "sha256:1f6d8c553add066a6aaf838d3172d4c5ed3c6b065b6f7eed2f4a4aa4af261e59"
+
+- name: download prebuilt runc binary
+  get_url:
+    url: "https://github.com/opencontainers/runc/releases/download/{{ runc_git_version }}/runc.{{ ansible_architecture | replace('x86_64', 'amd64') | replace('aarch64', 'arm64') }}"
+    dest: /usr/sbin/runc
+    mode: "0755"
+    force: yes
+    checksum: "{{ runc_checksums[ansible_architecture | replace('x86_64', 'amd64') | replace('aarch64', 'arm64')] }}"
+
+- name: link runc
+  file:
+    src: /usr/sbin/runc
+    dest: /usr/bin/runc
+    state: link
+    force: yes
