@@ -87,6 +87,27 @@ automatic provisioning.
 
 ## Check the retry
 
+### ServiceAccount mount aliases
+
+Restore container creation resolves the ServiceAccount mount destination against
+the target rootfs before saving its OCI spec. When /var/run resolves to /run,
+the destination becomes /run/secrets/kubernetes.io/serviceaccount to match CRIU's
+resolved external mount key. The current Pod's source, mount options and ID
+mappings are preserved. Ordinary creates and rootfs layouts without this alias
+are unchanged. Overlapping parent mounts or duplicate targets are rejected.
+No old Pod token or archived host directory is reused.
+
+Run on the Linux build host (the symlink cases must not be skipped):
+
+```bash
+go test -mod=vendor -v server/container_restore_mount.go server/container_restore_mount_test.go
+```
+
+After deploying to the isolated Worker, inspect a fresh OCI config: its source
+must contain the current Pod UID and destination must match the checkpoint's
+/run/secrets/kubernetes.io/serviceaccount external key. Check fresh CRIU logs;
+absence of the old open_tree error alone is not full restore proof.
+
 ### Sandbox containerenv after daemon restart
 
 LoadSandbox now restores the current infra container's .containerenv path before

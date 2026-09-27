@@ -959,6 +959,12 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr container.Conta
 		}
 	}
 
+	if ctr.Restore() {
+		if err := normalizeRestoreServiceAccountMount(mountPoint, specgen.Config.Mounts); err != nil {
+			return nil, fmt.Errorf("restore serviceaccount mount: %w", err)
+		}
+	}
+
 	saveOptions := generate.ExportOptions{}
 	if err := specgen.SaveToFile(filepath.Join(containerInfo.Dir, "config.json"), saveOptions); err != nil {
 		return nil, err
